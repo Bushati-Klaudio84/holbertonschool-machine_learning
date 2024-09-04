@@ -1,33 +1,31 @@
 #!/usr/bin/env python3
-"""
-    Uses the Star Wars API to return the list of ships that can hold
-"""
-
+""" APIs """
 import requests
-from sys import argv
-from time import time
+import sys
+from datetime import datetime
 
 
-if __name__ == "__main__":
-    if len(argv) < 2:
-        raise TypeError(
-            "Input must have the full API URL passed in as an argument: {}{}".
-            format('ex. "./2-user_location.py',
-                   'https://api.github.com/users/holbertonschool"'))
-    try:
-        url = argv[1]
-        results = requests.get(url)
-        if results.status_code == 403:
-            reset = results.headers.get('X-Ratelimit-Reset')
-            waitTime = int(reset) - time()
-            minutes = round(waitTime / 60)
-            print('Reset in {} min'.format(minutes))
-        else:
-            results = results.json()
-            location = results.get('location')
-            if location:
-                print(location)
-            else:
-                print('Not found')
-    except Exception as err:
-        print('Not found')
+def get_user_location(url):
+    """ get user location """
+    response = requests.get(url)
+    if response.status_code == 404:
+        print("Not found")
+    elif response.status_code == 403:
+        reset_timestamp = int(response.headers.get('X-RateLimit-Reset'))
+        reset_time = datetime.fromtimestamp(reset_timestamp)
+        minutes_until_reset = (reset_time -
+                               datetime.now()).total_seconds() // 60
+        print("Reset in {} min".format(int(minutes_until_reset)))
+    elif response.status_code == 200:
+        location = response.json().get('location', 'Not found')
+        print(location)
+    else:
+        print("Failed to fetch data")
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        url = sys.argv[1]
+        get_user_location(url)
+    else:
+        print("Usage: ./2-user_location.py <url>")

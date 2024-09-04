@@ -1,34 +1,23 @@
 #!/usr/bin/env python3
-
-"""
-    Uses the Star Wars API to return the list of ships that can hold
-"""
-
-
+""" APIs """
 import requests
 
 
 def availableShips(passengerCount):
-    """
-        Uses the Star Wars API to return the list of ships that can hold
-        passengerCount number of
-        passengers create a
-        availableShips function
-    """
-    if type(passengerCount) is not int:
-            raise TypeError(
-                "passengerCount must be a positive number of passengers")
-    if passengerCount < 0:
-            raise ValueError(
-                "passengerCount must be a positive number of passengers")
+    """ create a method that returns the list of ships that
+     can hold a given number of passengers """
+    url = 'https://swapi-api.hbtn.io/api/starships/'
+    them_ships = []
 
-    base_url = 'https://swapi-api.hbtn.io/api/starships/'
-    ships = []
-    response = requests.get(base_url).json()
+    while url:
+        response = requests.get(url)
+        data = response.json()
 
-    for ship in response['results']:
-        passengers = ship.get('passengers').replace(",", "")
-        if passengers != "n/a" and passengers != "unknown":
-            if int(passengers) >= passengerCount:
-                ships.append(ship.get('name'))
-    return ships 
+        for ship in data['results']:
+            passengers = ship.get('passengers', '0').replace(',', '')
+            if passengers.isdigit() and int(passengers) >= passengerCount:
+                them_ships.append(ship['name'])
+
+        url = data['next']
+
+    return them_ships
