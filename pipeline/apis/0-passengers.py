@@ -1,29 +1,33 @@
 #!/usr/bin/env python3
+"""
+    Uses the Star Wars API to return the list of ships that can hold
+"""
 
-"""
-Create a method that returns the list of ships that can hold a given number
-of passengers
-"""
+
 import requests
+
+
 def availableShips(passengerCount):
     """
-    Returns the list of ships that can hold a given number of passengers
-    :param passengerCount: number of passengers
-    :return: If no ship available, return an empty list
+        Uses the Star Wars API to return the list of ships that can hold
+        passengerCount number of
+        passengers create a
+        availableShips function
     """
-    url = "https://swapi-api.hbtn.io/api/starships/"
-    r = requests.get(url)
-    json = r.json()
-    results = json["results"]
+    if type(passengerCount) is not int:
+            raise TypeError(
+                "passengerCount must be a positive number of passengers")
+    if passengerCount < 0:
+            raise ValueError(
+                "passengerCount must be a positive number of passengers")
+
+    base_url = 'https://swapi-api.hbtn.io/api/starships/'
     ships = []
-    while json["next"]:
-        for res in results:
-            if res["passengers"] == 'n/a' or res["passengers"] == 'unknown':
-                continue
-            if int(res["passengers"].replace(',', '')) >= passengerCount:
-                ships.append(res["name"])
-        url = json["next"]
-        r = requests.get(url)
-        json = r.json()
-        results = json["results"]
-    return ships
+    response = requests.get(base_url).json()
+
+    for ship in response['results']:
+        passengers = ship.get('passengers').replace(",", "")
+        if passengers != "n/a" and passengers != "unknown":
+            if int(passengers) >= passengerCount:
+                ships.append(ship.get('name'))
+    return ships 
