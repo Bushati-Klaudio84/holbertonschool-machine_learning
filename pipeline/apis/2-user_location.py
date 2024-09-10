@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
     Uses the Star Wars API to return the list of ships that can hold
 """
@@ -17,8 +18,6 @@ if __name__ == "__main__":
     try:
         url = argv[1]
         results = requests.get(url)
-        # print(results.status_code)
-
         if results.status_code == 403:
             reset = results.headers.get('X-Ratelimit-Reset')
             waitTime = int(reset) - time()

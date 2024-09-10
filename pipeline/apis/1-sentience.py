@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 Defines methods to ping the Star Wars API and return the list of home planets
 for all sentient species
@@ -24,7 +25,8 @@ def sentientPlanets():
         url = results.get('next')
     homePlanets = []
     for species in speciesList:
-        if species.get('designation') == 'sentient' or species.get('classification') == 'sentient':
+        if species.get('designation') == 'sentient' or \
+           species.get('classification') == 'sentient':
             url = species.get('homeworld')
             if url:
                 planet = requests.get(url).json()
