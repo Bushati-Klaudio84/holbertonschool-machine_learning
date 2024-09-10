@@ -1,44 +1,38 @@
 #!/usr/bin/env python3
 
+"""
+Uses the (unofficial) SpaceX API to print the upcoming launch as:
+<launch name> (<date>) <rocket name> - <launchpad name> (<launchpad locality>)
+
+The “upcoming launch” is the one which is the soonest from now, in UTC
+and if 2 launches have the same date, it's the first one in the API result.
+"""
 import requests
-from datetime import datetime
 
 if __name__ == "__main__":
     url = "https://api.spacexdata.com/v4/launches/upcoming"
     results = requests.get(url).json()
-
-    earliest_date = float('inf')
+    dateCheck = float('inf')
     launchName = None
-    rocket_id = None
-    launchPad_id = None
-    launch_date = None
-
-    # Find the earliest upcoming launch
+    rocket = None
+    launchPad = None
+    location = None
     for launch in results:
         launchDate = launch.get('date_unix')
-        if launchDate and launchDate < earliest_date:
-            earliest_date = launchDate
-            launch_date = launch.get('date_utc')  # Use UTC time
+        if launchDate < dateCheck:
+            dateCheck = launchDate
+            date = launch.get('date_local')
             launchName = launch.get('name')
-            rocket_id = launch.get('rocket')
-            launchPad_id = launch.get('launchpad')
-
-    # Get rocket name
-    if rocket_id:
-        rocket_url = 'https://api.spacexdata.com/v4/rockets/{}'
-        rocket = requests.get(rocket_url.format(rocket_id)).json().get('name')
-
-    # Get launchpad details
-    if launchPad_id:
+            rocket = launch.get('rocket')
+            launchPad = launch.get('launchpad')
+    if rocket:
+        url = 'https://api.spacexdata.com/v4/rockets/{}'
+        rocket = requests.get(url.format(rocket)).json().get('name')
+    if launchPad:
         launchpads_url = 'https://api.spacexdata.com/v4/launchpads/{}'
-        launchpad = requests.get(launchpads_url.format(launchPad_id)).json()
+        launchpad = requests.get(launchpads_url.format(launchPad)).json()
         launchPad = launchpad.get('name')
         location = launchpad.get('locality')
 
-    # Print the output in the desired format
-    if launchName and rocket and launchPad and location and launch_date:
-        launch_date_formatted = datetime.strptime(launch_date, '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S')
-        print(f"{launchName} ({launch_date_formatted} UTC) {rocket} - {launchPad} ({location})")
-    else:
-        print("Error: Missing data for upcoming launch.")
-
+    print("{} ({}) {} - {} ({})".format(
+        launchName, date, rocket, launchPad, location))
