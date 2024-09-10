@@ -1,48 +1,44 @@
 #!/usr/bin/env python3
 
-"""
-Uses the (unofficial) SpaceX API to print the upcoming launch as:
-<launch name> (<date>) <rocket name> - <launchpad name> (<launchpad locality>)
-
-The “upcoming launch” is the one which is the soonest from now, in UTC
-and if 2 launches have the same date, it's the first one in the API result.
-"""
 import requests
 from datetime import datetime
 
-def get_first_launch():
-    # Fetching upcoming launches from SpaceX API
+if __name__ == "__main__":
     url = "https://api.spacexdata.com/v4/launches/upcoming"
-    response = requests.get(url)
-    launches = response.json()
+    results = requests.get(url).json()
 
-    # Sort launches by date_unix and take the first one
-    launches.sort(key=lambda x: x['date_unix'])
-    first_launch = launches[0]
+    earliest_date = float('inf')
+    launchName = None
+    rocket_id = None
+    launchPad_id = None
+    launch_date = None
 
-    # Extract required information
-    launch_name = first_launch['name']
-    date_unix = first_launch['date_unix']
-    rocket_id = first_launch['rocket']
-    launchpad_id = first_launch['launchpad']
+    # Find the earliest upcoming launch
+    for launch in results:
+        launchDate = launch.get('date_unix')
+        if launchDate and launchDate < earliest_date:
+            earliest_date = launchDate
+            launch_date = launch.get('date_utc')  # Use UTC time
+            launchName = launch.get('name')
+            rocket_id = launch.get('rocket')
+            launchPad_id = launch.get('launchpad')
 
-    # Convert Unix time to local time
-    date_local = datetime.fromtimestamp(date_unix).isoformat()
+    # Get rocket name
+    if rocket_id:
+        rocket_url = 'https://api.spacexdata.com/v4/rockets/{}'
+        rocket = requests.get(rocket_url.format(rocket_id)).json().get('name')
 
-    # Fetch rocket name using rocket_id
-    rocket_url = f"https://api.spacexdata.com/v4/rockets/{rocket_id}"
-    rocket_response = requests.get(rocket_url)
-    rocket_name = rocket_response.json()['name']
+    # Get launchpad details
+    if launchPad_id:
+        launchpads_url = 'https://api.spacexdata.com/v4/launchpads/{}'
+        launchpad = requests.get(launchpads_url.format(launchPad_id)).json()
+        launchPad = launchpad.get('name')
+        location = launchpad.get('locality')
 
-    # Fetch launchpad details using launchpad_id
-    launchpad_url = f"https://api.spacexdata.com/v4/launchpads/{launchpad_id}"
-    launchpad_response = requests.get(launchpad_url)
-    launchpad_data = launchpad_response.json()
-    launchpad_name = launchpad_data['name']
-    launchpad_locality = launchpad_data['locality']
+    # Print the output in the desired format
+    if launchName and rocket and launchPad and location and launch_date:
+        launch_date_formatted = datetime.strptime(launch_date, '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S')
+        print(f"{launchName} ({launch_date_formatted} UTC) {rocket} - {launchPad} ({location})")
+    else:
+        print("Error: Missing data for upcoming launch.")
 
-    # Formatting the output
-    print(f"{launch_name} ({date_local}) {rocket_name} - {launchpad_name} ({launchpad_locality})")
-
-if __name__ == '__main__':
-    get_first_launch()
