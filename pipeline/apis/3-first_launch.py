@@ -1,40 +1,38 @@
 #!/usr/bin/env python3
 
+"""
+Uses the (unofficial) SpaceX API to print the upcoming launch as:
+<launch name> (<date>) <rocket name> - <launchpad name> (<launchpad locality>)
+
+The “upcoming launch” is the one which is the soonest from now, in UTC
+and if 2 launches have the same date, it's the first one in the API result.
+"""
 import requests
 
 if __name__ == "__main__":
     url = "https://api.spacexdata.com/v4/launches/upcoming"
     results = requests.get(url).json()
-
-    # Initialize variables to track the earliest launch
     dateCheck = float('inf')
     launchName = None
-    rocket_id = None
-    launchPad_id = None
-    date_local = None
-
-    # Find the earliest upcoming launch
+    rocket = None
+    launchPad = None
+    location = None
     for launch in results:
         launchDate = launch.get('date_unix')
         if launchDate < dateCheck:
             dateCheck = launchDate
-            date_local = launch.get('date_local')  # Use local time
+            date = launch.get('date_local')
             launchName = launch.get('name')
-            rocket_id = launch.get('rocket')
-            launchPad_id = launch.get('launchpad')
-
-    # Get rocket name
-    if rocket_id:
-        rocket_url = f'https://api.spacexdata.com/v4/rockets/{rocket_id}'
-        rocket = requests.get(rocket_url).json().get('name')
-
-    # Get launchpad details
-    if launchPad_id:
-        launchpads_url = f'https://api.spacexdata.com/v4/launchpads/{launchPad_id}'
-        launchpad = requests.get(launchpads_url).json()
+            rocket = launch.get('rocket')
+            launchPad = launch.get('launchpad')
+    if rocket:
+        url = 'https://api.spacexdata.com/v4/rockets/{}'
+        rocket = requests.get(url.format(rocket)).json().get('name')
+    if launchPad:
+        launchpads_url = 'https://api.spacexdata.com/v4/launchpads/{}'
+        launchpad = requests.get(launchpads_url.format(launchPad)).json()
         launchPad = launchpad.get('name')
         location = launchpad.get('locality')
 
-    # Print the output in the required format
-    if launchName and rocket and launchPad and location and date_local:
-        print(f"{launchName} ({date_local}) {rocket} - {launchPad} ({location})")
+    print("{} ({}) {} - {} ({})".format(
+        launchName, date, rocket, launchPad, location))
